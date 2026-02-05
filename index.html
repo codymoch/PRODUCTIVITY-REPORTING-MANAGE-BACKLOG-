@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Vendor Dispatch - Manage Backlog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #0066cc;
+            --secondary-blue: #4d94ff;
+            --success-green: #22c55e;
+            --warning-yellow: #f59e0b;
+            --danger-red: #ef4444;
+            --neutral-50: #f8fafc;
+            --neutral-100: #f1f5f9;
+            --neutral-200: #e2e8f0;
+            --neutral-300: #cbd5e1;
+            --neutral-400: #94a3b8;
+            --neutral-500: #64748b;
+            --neutral-600: #475569;
+            --neutral-700: #334155;
+            --neutral-800: #1e293b;
+            --neutral-900: #0f172a;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--neutral-50) 0%, #f8fafc 100%);
+            color: var(--neutral-800);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--neutral-200);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--neutral-600);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--neutral-900);
+        }
+
+        .queue-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .queue-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--neutral-300);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            background: white;
+            min-width: 300px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--neutral-200);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--neutral-500);
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            border: 1px solid var(--neutral-200);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--neutral-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--neutral-300);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+        }
+
+        .backlog-table {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid var(--neutral-200);
+            box-shadow: var(--shadow-md);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--neutral-50);
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--neutral-700);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-right: 1px solid var(--neutral-200);
+        }
+
+        th:last-child {
+            border-right: none;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--neutral-100);
+            border-right: 1px solid var(--neutral-100);
+            font-size: 0.9rem;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: var(--neutral-50);
+        }
+
+        .search-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            color: var(--primary-blue);
+            cursor: pointer;
+        }
+
+        .search-id:hover {
+            text-decoration: underline;
+        }
+
+        .priority-high {
+            background: var(--danger-red);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .priority-medium {
+            background: var(--warning-yellow);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .priority-normal {
+            background: var(--neutral-400);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-working {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--success-green);
+            font-weight: 500;
+        }
+
+        .status-available {
+            color: var(--neutral-500);
+        }
+
+        .status-overdue {
+            color: var(--danger-red);
+            font-weight: 500;
+        }
+
+        .working-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .time-invested {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .time-high {
+            color: var(--danger-red);
+        }
+
+        .time-medium {
+            color: var(--warning-yellow);
+        }
+
+        .time-normal {
+            color: var(--neutral-600);
+        }
+
+        .researcher-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .current-researcher {
+            font-weight: 500;
+            color: var(--neutral-800);
+        }
+
+        .session-time {
+            font-size: 0.8rem;
+            color: var(--neutral-500);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            color: var(--neutral-500);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .expand-btn:hover {
+            background: var(--neutral-100);
+            color: var(--neutral-700);
+        }
+
+        .history-row {
+            background: var(--neutral-25) !important;
+        }
+
+        .history-content {
+            padding: 1rem;
+            border-left: 3px solid var(--primary-blue);
+            margin-left: 1rem;
+            background: var(--neutral-50);
+            border-radius: var(--border-radius);
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-researcher {
+            font-weight: 500;
+        }
+
+        .history-duration {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--neutral-600);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-blue);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--neutral-700);
+            border: 1px solid var(--neutral-300);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--neutral-50);
+            border-color: var(--neutral-400);
+        }
+
+        .new-feature-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 0.5rem;
+            box-shadow: 0 2px 4px rgba(238, 90, 36, 0.3);
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--neutral-800);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--border-radius);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+
+        .performance-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .perf-excellent { background: var(--success-green); }
+        .perf-good { background: #84cc16; }
+        .perf-average { background: var(--warning-yellow); }
+        .perf-poor { background: var(--danger-red); }
+
+        /* Productivity Report Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            max-width: 1200px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--neutral-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--neutral-50);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--neutral-900);
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--neutral-500);
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--neutral-200);
+            color: var(--neutral-700);
+        }
+
+        .modal-body {
+            padding: 2rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .report-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--neutral-50);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--neutral-200);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--neutral-700);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-select {
+            padding: 0.75rem;
+            border: 1px solid var(--neutral-300);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        .report-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--neutral-200);
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-label {
+            font-size: 0.8rem;
+            color: var(--neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .productivity-table {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 1px solid var(--neutral-200);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .productivity-table table {
+            width: 100%;
+        }
+
+        .productivity-table th {
+            background: var(--neutral-50);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--neutral-700);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        .productivity-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--neutral-100);
+            font-size: 0.9rem;
+        }
+
+        .researcher-name {
+            font-weight: 600;
+            color: var(--neutral-800);
+        }
+
+        .search-type-tag {
+            background: var(--primary-blue);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            display: inline-block;
+            margin-bottom: 0.25rem;
+        }
+
+        .avg-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .time-excellent { color: var(--success-green); }
+        .time-good { color: #84cc16; }
+        .time-average { color: var(--warning-yellow); }
+        .time-poor { color: var(--danger-red); }
+
+        .completion-count {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .export-btn {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            margin-top: 1.5rem;
+        }
+
+        .export-btn:hover {
+            background: #16a34a;
+        }
+
+        /* My Productivity Modal Styles */
+        .my-productivity-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--neutral-800);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-blue);
+        }
+
+        .work-in-progress-card {
+            background: white;
+            border: 1px solid var(--neutral-200);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .work-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .work-card-info {
+            flex: 1;
+        }
+
+        .work-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--neutral-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .work-card-subtitle {
+            color: var(--neutral-600);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .work-timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--success-green);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .timer-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .work-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn-release {
+            background: var(--warning-yellow);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-release:hover {
+            background: #d97706;
+        }
+
+        .available-work-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+        }
+
+        .available-work-card {
+            background: white;
+            border: 1px solid var(--neutral-200);
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .available-work-card:hover {
+            border-color: var(--primary-blue);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .available-work-card.selected {
+            border-color: var(--primary-blue);
+            background: #f0f7ff;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+        }
+
+        .card-checkbox {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 18px;
+            height: 18px;
+        }
+
+        .quick-assign-bar {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 1px solid var(--neutral-200);
+            padding: 1rem 2rem;
+            margin: -2rem -2rem 0;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .quick-assign-bar.show {
+            display: flex;
+        }
+
+        .selection-summary {
+            font-weight: 500;
+            color: var(--neutral-700);
+        }
+
+        .btn-assign-selected {
+            background: var(--success-green);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-assign-selected:hover {
+            background: #16a34a;
+        }
+
+        .priority-indicator {
+            display: inline-block;
+            width: 4px;
+            height: 40px;
+            border-radius: 2px;
+            margin-right: 1rem;
+        }
+
+        .priority-high-indicator { background: var(--danger-red); }
+        .priority-medium-indicator { background: var(--warning-yellow); }
+        .priority-normal-indicator { background: var(--neutral-400); }
+
+        .my-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .my-stat-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--neutral-200);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .my-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .my-stat-label {
+            font-size: 0.8rem;
+            color: var(--neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">AccioData</div>
+            <div class="user-info">
+                <span>Queue Manager</span>
+                <span>|</span>
+                <span>County Hits for Internal Researchers</span>
+                <span>|</span>
+                <span>Last Updated: 2:34 PM</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="page-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1 class="page-title">
+                    Manage Backlog
+                    <span class="new-feature-badge">Enhanced</span>
+                </h1>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn-secondary" onclick="showMyProductivity()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                        👤 My Productivity
+                        <span class="new-feature-badge" style="margin-left: 0.5rem;">NEW</span>
+                    </button>
+                    <button class="btn-primary" onclick="showProductivityReport()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                        📊 Manager's View - Productivity Report
+                        <span class="new-feature-badge" style="margin-left: 0.5rem;">NEW</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="queue-selector">
+            <label for="queue-select"><strong>Vendor Queue:</strong></label>
+            <select id="queue-select" class="queue-select">
+                <option value="county-hits">County Hits for Internal Researchers</option>
+                <option value="employment-verification">Employment Verification Queue</option>
+                <option value="criminal-background">Criminal Background Queue</option>
+                <option value="reference-checks">Reference Checks Queue</option>
+            </select>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">Total Searches</div>
+                <div class="stat-value" style="color: var(--primary-blue)">27</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Currently Working</div>
+                <div class="stat-value" style="color: var(--success-green)">4</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Available</div>
+                <div class="stat-value" style="color: var(--neutral-600)">18</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Overdue</div>
+                <div class="stat-value" style="color: var(--danger-red)">5</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label tooltip" data-tooltip="Average time searches spend unassigned in queue">Avg. Queue Time</div>
+                <div class="stat-value" style="color: var(--warning-yellow)">1h 42m</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label tooltip" data-tooltip="Average time spent per search by researchers">Avg. Work Time</div>
+                <div class="stat-value" style="color: var(--success-green)">24m</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="researcher-filter">Filter by Researcher</label>
+                    <select id="researcher-filter" class="filter-input">
+                        <option value="">All Researchers</option>
+                        <option value="bob">Bob Martinez</option>
+                        <option value="sue">Sue Chen</option>
+                        <option value="tim">Tim Johnson</option>
+                        <option value="available">Available Only</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="priority-filter">Priority Level</label>
+                    <select id="priority-filter" class="filter-input">
+                        <option value="">All Priorities</option>
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="normal">Normal Priority</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="time-filter">Time Analysis</label>
+                    <select id="time-filter" class="filter-input">
+                        <option value="">All Searches</option>
+                        <option value="high-work-time">High Work Time (>30min)</option>
+                        <option value="high-queue-time">High Queue Time (>2h)</option>
+                        <option value="multiple-researchers">Multiple Researchers</option>
+                        <option value="abandoned">Recently Abandoned</option>
+                        <option value="new">New Searches</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="search-input">Search ID</label>
+                    <input type="text" id="search-input" class="filter-input" placeholder="Enter search ID...">
+                </div>
+            </div>
+        </div>
+
+        <div class="backlog-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Search ID</th>
+                        <th>Subject Name</th>
+                        <th>Search Type</th>
+                        <th>Priority</th>
+                        <th>
+                            Currently Working
+                            <span class="new-feature-badge">NEW</span>
+                        </th>
+                        <th>
+                            Total Time Invested
+                            <span class="new-feature-badge">NEW</span>
+                        </th>
+                        <th>Expected Time</th>
+                        <th>Queue Time</th>
+                        <th>Actions</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="backlog-tbody">
+                    <tr>
+                        <td><span class="search-id">SR-2024-0891</span></td>
+                        <td>Johnson, Michael R.</td>
+                        <td>County Criminal - TX</td>
+                        <td><span class="priority-high">High</span></td>
+                        <td>
+                            <div class="status-working">
+                                <span class="working-indicator"></span>
+                                <div class="researcher-info">
+                                    <span class="current-researcher">Bob Martinez</span>
+                                    <span class="session-time">Working for 42m</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="time-invested time-high tooltip" data-tooltip="2 researchers have worked on this">
+                                1h 18m
+                                <div class="performance-indicator perf-poor"></div>
+                            </div>
+                        </td>
+                        <td>25m</td>
+                        <td>2h 15m</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-secondary">View</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="expand-btn" onclick="toggleHistory(this, 'sr891')" title="Show researcher history">▼</button>
+                        </td>
+                    </tr>
+                    <tr id="sr891-history" style="display: none;" class="history-row">
+                        <td colspan="10">
+                            <div class="history-content">
+                                <strong>Complete Search Timeline:</strong>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">18m (Waiting in queue)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher">Sue Chen</span>
+                                    <span class="history-duration">36m (Started, did not complete)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">22m (Returned to queue after abandonment)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher">Bob Martinez</span>
+                                    <span class="history-duration">42m (Currently working)</span>
+                                </div>
+                                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--neutral-200); font-size: 0.85rem; color: var(--neutral-600);">
+                                    <strong>Total Timeline:</strong> 1h 58m (40m unassigned + 1h 18m researcher time)
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="search-id">SR-2024-0892</span></td>
+                        <td>Davis, Sarah M.</td>
+                        <td>County Criminal - CA</td>
+                        <td><span class="priority-medium">Medium</span></td>
+                        <td>
+                            <div class="status-working">
+                                <span class="working-indicator"></span>
+                                <div class="researcher-info">
+                                    <span class="current-researcher">Sue Chen</span>
+                                    <span class="session-time">Working for 15m</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="time-invested time-normal">
+                                15m
+                                <div class="performance-indicator perf-good"></div>
+                            </div>
+                        </td>
+                        <td>20m</td>
+                        <td>45m</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-secondary">View</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="expand-btn" onclick="toggleHistory(this, 'sr892')" title="Show researcher history">▼</button>
+                        </td>
+                    </tr>
+                    <tr id="sr892-history" style="display: none;" class="history-row">
+                        <td colspan="10">
+                            <div class="history-content">
+                                <strong>Researcher History:</strong>
+                                <div class="history-item">
+                                    <span class="history-researcher">Sue Chen</span>
+                                    <span class="history-duration">15m (Currently working)</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="search-id">SR-2024-0893</span></td>
+                        <td>Wilson, Robert J.</td>
+                        <td>County Criminal - FL</td>
+                        <td><span class="priority-normal">Normal</span></td>
+                        <td>
+                            <div class="status-working">
+                                <span class="working-indicator"></span>
+                                <div class="researcher-info">
+                                    <span class="current-researcher">Tim Johnson</span>
+                                    <span class="session-time">Working for 8m</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="time-invested time-medium tooltip" data-tooltip="3 researchers have worked on this">
+                                52m
+                                <div class="performance-indicator perf-average"></div>
+                            </div>
+                        </td>
+                        <td>25m</td>
+                        <td>3h 22m</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-secondary">View</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="expand-btn" onclick="toggleHistory(this, 'sr893')" title="Show researcher history">▼</button>
+                        </td>
+                    </tr>
+                    <tr id="sr893-history" style="display: none;" class="history-row">
+                        <td colspan="10">
+                            <div class="history-content">
+                                <strong>Complete Search Timeline:</strong>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">45m (Initial queue time)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher">Bob Martinez</span>
+                                    <span class="history-duration">18m (Started, did not complete)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">1h 12m (Returned to queue)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher">Sue Chen</span>
+                                    <span class="history-duration">26m (Started, did not complete)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">27m (Returned to queue again)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher">Tim Johnson</span>
+                                    <span class="history-duration">8m (Currently working)</span>
+                                </div>
+                                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--neutral-200); font-size: 0.85rem; color: var(--neutral-600);">
+                                    <strong>Total Timeline:</strong> 3h 16m (2h 24m unassigned + 52m researcher time) 
+                                    <span style="color: var(--danger-red); margin-left: 0.5rem;">⚠️ High unassigned time</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="search-id">SR-2024-0894</span></td>
+                        <td>Anderson, Lisa K.</td>
+                        <td>County Criminal - NY</td>
+                        <td><span class="priority-high">High</span></td>
+                        <td>
+                            <div class="status-available">Available for Assignment</div>
+                        </td>
+                        <td>
+                            <div class="time-invested time-normal">
+                                0m
+                                <div class="performance-indicator perf-excellent"></div>
+                            </div>
+                        </td>
+                        <td>30m</td>
+                        <td>1h 5m</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-primary">Assign to Me</button>
+                                <button class="btn-secondary">View</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="expand-btn" onclick="toggleHistory(this, 'sr894')" title="Show researcher history">▼</button>
+                        </td>
+                    </tr>
+                    <tr id="sr894-history" style="display: none;" class="history-row">
+                        <td colspan="10">
+                            <div class="history-content">
+                                <strong>Researcher History:</strong>
+                                <div class="history-item">
+                                    <span class="history-researcher">No researchers have worked on this search yet</span>
+                                    <span class="history-duration"></span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="search-id">SR-2024-0895</span></td>
+                        <td>Thompson, James D.</td>
+                        <td>County Criminal - TX</td>
+                        <td><span class="priority-normal">Normal</span></td>
+                        <td>
+                            <div class="status-overdue">Abandoned (Timeout)</div>
+                        </td>
+                        <td>
+                            <div class="time-invested time-medium tooltip" data-tooltip="Search was started but abandoned due to timeout">
+                                22m
+                                <div class="performance-indicator perf-average"></div>
+                            </div>
+                        </td>
+                        <td>25m</td>
+                        <td>4h 33m</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-primary">Assign to Me</button>
+                                <button class="btn-secondary">View</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="expand-btn" onclick="toggleHistory(this, 'sr895')" title="Show researcher history">▼</button>
+                        </td>
+                    </tr>
+                    <tr id="sr895-history" style="display: none;" class="history-row">
+                        <td colspan="10">
+                            <div class="history-content">
+                                <strong>Complete Search Timeline:</strong>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">3h 41m (Initial queue time)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher">Bob Martinez</span>
+                                    <span class="history-duration">22m (Started, session timed out after 30min inactivity)</span>
+                                </div>
+                                <div class="history-item">
+                                    <span class="history-researcher" style="color: var(--neutral-500); font-style: italic;">⏳ Unassigned</span>
+                                    <span class="history-duration">30m (Currently available for assignment)</span>
+                                </div>
+                                <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--neutral-200); font-size: 0.85rem; color: var(--neutral-600);">
+                                    <strong>Total Timeline:</strong> 4h 33m (4h 11m unassigned + 22m researcher time)
+                                    <span style="color: var(--danger-red); margin-left: 0.5rem;">⚠️ Excessive queue time</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Productivity Report Modal -->
+    <div id="productivityModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 Researcher Productivity Report</h2>
+                <button class="close-btn" onclick="hideProductivityReport()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-controls">
+                    <div class="control-group">
+                        <label class="control-label">Time Period</label>
+                        <select id="timePeriod" class="control-select" onchange="updateProductivityReport()">
+                            <option value="today">Today</option>
+                            <option value="week" selected>This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="quarter">This Quarter</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Queue Filter</label>
+                        <select id="queueFilter" class="control-select" onchange="updateProductivityReport()">
+                            <option value="all">All Queues</option>
+                            <option value="county-hits" selected>County Hits for Internal Researchers</option>
+                            <option value="employment">Employment Verification Queue</option>
+                            <option value="criminal">Criminal Background Queue</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Researcher Filter</label>
+                        <select id="researcherFilter" class="control-select" onchange="updateProductivityReport()">
+                            <option value="all" selected>All Researchers</option>
+                            <option value="bob">Bob Martinez</option>
+                            <option value="sue">Sue Chen</option>
+                            <option value="tim">Tim Johnson</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="display: flex; align-items: end;">
+                        <button class="export-btn" onclick="exportReport()">📄 Export Report</button>
+                    </div>
+                </div>
+
+                <div class="report-summary">
+                    <div class="summary-card">
+                        <div class="summary-value">84</div>
+                        <div class="summary-label">Average Backlog Size</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">47</div>
+                        <div class="summary-label">Searches Completed</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">47/56%</div>
+                        <div class="summary-label">% Complete</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">3</div>
+                        <div class="summary-label">Active Researchers</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">120h</div>
+                        <div class="summary-label">Total Available Hours</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">88h</div>
+                        <div class="summary-label">Hours on Completed Searches</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">73%</div>
+                        <div class="summary-label">Utilization Rate</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">15.7</div>
+                        <div class="summary-label">Avg per Researcher</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">19.5</div>
+                        <div class="summary-label">Potential per Researcher</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">32h</div>
+                        <div class="summary-label">Unutilized Hours</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">2.05</div>
+                        <div class="summary-label">Searches/Hour Rate</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9ff; border-left: 4px solid var(--primary-blue); border-radius: var(--border-radius);">
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--neutral-600);">
+                        <strong>Work Flow Analysis:</strong> 84 searches available in backlog, 47 completed = 56% completion rate.
+                        <strong>Utilization:</strong> 88 hours used ÷ 120 hours available = 73% researcher utilization.
+                        <strong>Opportunity:</strong> 32 unutilized hours × 2.05 rate = 15.6 additional searches possible with current staffing.
+                    </p>
+                </div>
+
+                <div class="productivity-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Researcher Name</th>
+                                <th>Search Types Completed</th>
+                                <th>Total Completed</th>
+                                <th>Avg Time per Type</th>
+                                <th>Efficiency Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="researcher-name">Bob Martinez</div>
+                                    <div style="font-size: 0.8rem; color: var(--neutral-500);">Senior Researcher</div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <span class="search-type-tag">County Criminal - TX: 8</span>
+                                        <span class="search-type-tag">County Criminal - CA: 5</span>
+                                        <span class="search-type-tag">County Criminal - FL: 3</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="completion-count">16</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <span class="avg-time time-excellent">TX: 18m</span>
+                                        <span class="avg-time time-good">CA: 22m</span>
+                                        <span class="avg-time time-average">FL: 28m</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span class="performance-indicator perf-excellent"></span>
+                                        <span style="font-weight: 600;">Excellent</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="researcher-name">Sue Chen</div>
+                                    <div style="font-size: 0.8rem; color: var(--neutral-500);">Mid-Level Researcher</div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <span class="search-type-tag">County Criminal - TX: 6</span>
+                                        <span class="search-type-tag">County Criminal - CA: 8</span>
+                                        <span class="search-type-tag">County Criminal - NY: 4</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="completion-count">18</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <span class="avg-time time-good">TX: 21m</span>
+                                        <span class="avg-time time-excellent">CA: 19m</span>
+                                        <span class="avg-time time-average">NY: 26m</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span class="performance-indicator perf-good"></span>
+                                        <span style="font-weight: 600;">Good</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="researcher-name">Tim Johnson</div>
+                                    <div style="font-size: 0.8rem; color: var(--neutral-500);">Junior Researcher</div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <span class="search-type-tag">County Criminal - TX: 4</span>
+                                        <span class="search-type-tag">County Criminal - CA: 3</span>
+                                        <span class="search-type-tag">County Criminal - FL: 6</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="completion-count">13</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <span class="avg-time time-average">TX: 28m</span>
+                                        <span class="avg-time time-average">CA: 31m</span>
+                                        <span class="avg-time time-good">FL: 24m</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span class="performance-indicator perf-average"></span>
+                                        <span style="font-weight: 600;">Average</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1.5rem; background: var(--neutral-50); border-radius: var(--border-radius); border: 1px solid var(--neutral-200);">
+                    <h3 style="margin-bottom: 1rem; color: var(--neutral-800);">📈 Key Insights</h3>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--success-green);">✓</span>
+                            <strong>Work Availability Confirmed:</strong> Average backlog of 84 searches shows sufficient work was available throughout the week.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--warning-yellow);">⚠</span>
+                            <strong>Utilization Gap:</strong> Team operating at 73% capacity (88 hours used out of 120 hours available).
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--warning-yellow);">💰</span>
+                            <strong>Capacity Opportunity:</strong> 32 hours of unutilized time = 15.6 additional searches possible per week.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--primary-blue);">💡</span>
+                            <strong>Per-Researcher Impact:</strong> Each person completing 15.7/week, could handle 5.2 more searches each (32h ÷ 3 = 10.7h per person).
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--danger-red);">🚨</span>
+                            <strong>Queue Time Alert:</strong> Searches spend 80% of their time unassigned (avg 1h 35m queue vs 23m work time).
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--success-green);">✓</span>
+                            <strong>Bob Martinez</strong> consistently performs above expectations across all search types, especially TX County Criminals.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--success-green);">✓</span>
+                            <strong>Sue Chen</strong> shows strong performance in CA searches and is improving in TX searches.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--warning-yellow);">⚠</span>
+                            <strong>Tim Johnson</strong> may benefit from additional training on TX and CA search procedures.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--warning-yellow);">⚠</span>
+                            <strong>Reassignment Pattern:</strong> 23% of searches require multiple researchers, suggesting complexity or training gaps.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--primary-blue);">💡</span>
+                            <strong>Quick Win:</strong> Improving utilization from 73% to 85% would add 14.4 hours (7 more searches/week).
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--primary-blue);">💡</span>
+                            <strong>Optimization Opportunity:</strong> Consider auto-assignment or queue balancing to reduce unassigned time.
+                        </li>
+                        <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0; color: var(--primary-blue);">ℹ</span>
+                            <strong>Overall performance:</strong> Team maintains 2.05 searches/hour rate during active work periods, showing strong individual capability.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Productivity Modal -->
+    <div id="myProductivityModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">👤 My Productivity Dashboard</h2>
+                <button class="close-btn" onclick="hideMyProductivity()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Personal Stats -->
+                <div class="my-stats-grid">
+                    <div class="my-stat-card">
+                        <div class="my-stat-value">3</div>
+                        <div class="my-stat-label">Currently Working</div>
+                    </div>
+                    <div class="my-stat-card">
+                        <div class="my-stat-value">12</div>
+                        <div class="my-stat-label">Completed Today</div>
+                    </div>
+                    <div class="my-stat-card">
+                        <div class="my-stat-value">2h 45m</div>
+                        <div class="my-stat-label">Active Work Time</div>
+                    </div>
+                    <div class="my-stat-card">
+                        <div class="my-stat-value">22m</div>
+                        <div class="my-stat-label">Avg Time/Search</div>
+                    </div>
+                    <div class="my-stat-card">
+                        <div class="my-stat-value">4.4/hr</div>
+                        <div class="my-stat-label">Current Pace</div>
+                    </div>
+                </div>
+
+                <!-- Work in Progress Section -->
+                <div class="my-productivity-section">
+                    <h3 class="section-title">🔄 My Work in Progress</h3>
+                    
+                    <div class="work-in-progress-card">
+                        <div class="work-card-header">
+                            <div class="work-card-info">
+                                <div class="work-card-title">SR-2024-0891 - Johnson, Michael R.</div>
+                                <div class="work-card-subtitle">County Criminal - TX • <span class="priority-high">High Priority</span></div>
+                                <div class="work-timer">
+                                    <span class="timer-indicator"></span>
+                                    Working for 57m
+                                </div>
+                            </div>
+                            <div class="work-actions">
+                                <button class="btn-secondary" onclick="viewSearch('SR-2024-0891')">View Details</button>
+                                <button class="btn-release" onclick="releaseSearch('SR-2024-0891')" title="Going to lunch? Release this search back to queue">
+                                    Release Back to Queue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="work-in-progress-card">
+                        <div class="work-card-header">
+                            <div class="work-card-info">
+                                <div class="work-card-title">SR-2024-0903 - Williams, Sarah J.</div>
+                                <div class="work-card-subtitle">County Criminal - CA • <span class="priority-medium">Medium Priority</span></div>
+                                <div class="work-timer">
+                                    <span class="timer-indicator"></span>
+                                    Working for 23m
+                                </div>
+                            </div>
+                            <div class="work-actions">
+                                <button class="btn-secondary" onclick="viewSearch('SR-2024-0903')">View Details</button>
+                                <button class="btn-release" onclick="releaseSearch('SR-2024-0903')">
+                                    Release Back to Queue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="work-in-progress-card">
+                        <div class="work-card-header">
+                            <div class="work-card-info">
+                                <div class="work-card-title">SR-2024-0897 - Davis, Robert K.</div>
+                                <div class="work-card-subtitle">County Criminal - FL • <span class="priority-normal">Normal Priority</span></div>
+                                <div class="work-timer">
+                                    <span class="timer-indicator"></span>
+                                    Working for 8m
+                                </div>
+                            </div>
+                            <div class="work-actions">
+                                <button class="btn-secondary" onclick="viewSearch('SR-2024-0897')">View Details</button>
+                                <button class="btn-release" onclick="releaseSearch('SR-2024-0897')">
+                                    Release Back to Queue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Work Section -->
+                <div class="my-productivity-section">
+                    <h3 class="section-title">📋 Available Work - Quick Assign</h3>
+                    <p style="color: var(--neutral-600); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                        Select one or multiple searches to assign to yourself. Perfect for batch assignment before starting your work session.
+                    </p>
+                    
+                    <div class="available-work-grid">
+                        <div class="available-work-card" onclick="toggleSearchSelection(this, 'SR-2024-0894')" data-search-id="SR-2024-0894">
+                            <input type="checkbox" class="card-checkbox" onchange="event.stopPropagation()">
+                            <div class="priority-indicator priority-high-indicator"></div>
+                            <div style="margin-left: 1rem;">
+                                <div class="work-card-title">SR-2024-0894</div>
+                                <div class="work-card-subtitle">Anderson, Lisa K.</div>
+                                <div class="work-card-subtitle">County Criminal - NY</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--neutral-500);">
+                                    Queue time: 1h 5m • Expected: 30m
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="available-work-card" onclick="toggleSearchSelection(this, 'SR-2024-0896')" data-search-id="SR-2024-0896">
+                            <input type="checkbox" class="card-checkbox" onchange="event.stopPropagation()">
+                            <div class="priority-indicator priority-medium-indicator"></div>
+                            <div style="margin-left: 1rem;">
+                                <div class="work-card-title">SR-2024-0896</div>
+                                <div class="work-card-subtitle">Thompson, Mark D.</div>
+                                <div class="work-card-subtitle">County Criminal - TX</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--neutral-500);">
+                                    Queue time: 2h 22m • Expected: 25m
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="available-work-card" onclick="toggleSearchSelection(this, 'SR-2024-0898')" data-search-id="SR-2024-0898">
+                            <input type="checkbox" class="card-checkbox" onchange="event.stopPropagation()">
+                            <div class="priority-indicator priority-normal-indicator"></div>
+                            <div style="margin-left: 1rem;">
+                                <div class="work-card-title">SR-2024-0898</div>
+                                <div class="work-card-subtitle">Miller, Jennifer L.</div>
+                                <div class="work-card-subtitle">County Criminal - CA</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--neutral-500);">
+                                    Queue time: 45m • Expected: 20m
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="available-work-card" onclick="toggleSearchSelection(this, 'SR-2024-0899')" data-search-id="SR-2024-0899">
+                            <input type="checkbox" class="card-checkbox" onchange="event.stopPropagation()">
+                            <div class="priority-indicator priority-high-indicator"></div>
+                            <div style="margin-left: 1rem;">
+                                <div class="work-card-title">SR-2024-0899</div>
+                                <div class="work-card-subtitle">Garcia, Carlos M.</div>
+                                <div class="work-card-subtitle">County Criminal - TX</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--neutral-500);">
+                                    Queue time: 3h 15m • Expected: 25m
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="available-work-card" onclick="toggleSearchSelection(this, 'SR-2024-0900')" data-search-id="SR-2024-0900">
+                            <input type="checkbox" class="card-checkbox" onchange="event.stopPropagation()">
+                            <div class="priority-indicator priority-normal-indicator"></div>
+                            <div style="margin-left: 1rem;">
+                                <div class="work-card-title">SR-2024-0900</div>
+                                <div class="work-card-subtitle">Brown, Patricia A.</div>
+                                <div class="work-card-subtitle">County Criminal - FL</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--neutral-500);">
+                                    Queue time: 1h 28m • Expected: 25m
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="available-work-card" onclick="toggleSearchSelection(this, 'SR-2024-0901')" data-search-id="SR-2024-0901">
+                            <input type="checkbox" class="card-checkbox" onchange="event.stopPropagation()">
+                            <div class="priority-indicator priority-medium-indicator"></div>
+                            <div style="margin-left: 1rem;">
+                                <div class="work-card-title">SR-2024-0901</div>
+                                <div class="work-card-subtitle">Wilson, James R.</div>
+                                <div class="work-card-subtitle">County Criminal - CA</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--neutral-500);">
+                                    Queue time: 52m • Expected: 20m
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Assignment Bar (appears when items are selected) -->
+                <div id="quickAssignBar" class="quick-assign-bar">
+                    <div class="selection-summary">
+                        <span id="selectedCount">0</span> searches selected
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-secondary" onclick="clearSelection()">Clear Selection</button>
+                        <button class="btn-assign-selected" onclick="assignSelectedToMe()">
+                            🎯 Assign Selected to Me
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleHistory(button, searchId) {
+            const historyRow = document.getElementById(searchId + '-history');
+            const isVisible = historyRow.style.display !== 'none';
+            
+            if (isVisible) {
+                historyRow.style.display = 'none';
+                button.textContent = '▼';
+            } else {
+                historyRow.style.display = 'table-row';
+                button.textContent = '▲';
+            }
+        }
+
+        function showProductivityReport() {
+            const modal = document.getElementById('productivityModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideProductivityReport() {
+            const modal = document.getElementById('productivityModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        function showMyProductivity() {
+            const modal = document.getElementById('myProductivityModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideMyProductivity() {
+            const modal = document.getElementById('myProductivityModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+            // Clear any selections when closing
+            clearSelection();
+        }
+
+        function releaseSearch(searchId) {
+            const confirmed = confirm(`Are you sure you want to release ${searchId} back to the queue?\n\nThis will stop your timer and make it available for other researchers.`);
+            if (confirmed) {
+                console.log(`Released ${searchId} back to queue`);
+                // In real implementation, this would make API call to release the search
+                alert(`${searchId} has been released back to the queue.\nYour work session time has been saved: You can resume later or another researcher can pick it up.`);
+                
+                // Remove the work card from the UI
+                const workCard = document.querySelector(`[data-search-id="${searchId}"]`)?.closest('.work-in-progress-card');
+                if (workCard) {
+                    workCard.style.opacity = '0.5';
+                    workCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--warning-yellow); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">RELEASED</div>';
+                    setTimeout(() => workCard.remove(), 2000);
+                }
+            }
+        }
+
+        function viewSearch(searchId) {
+            console.log(`Viewing details for ${searchId}`);
+            // In real implementation, this would open the search details page
+            alert(`Opening detailed view for ${searchId}...`);
+        }
+
+        let selectedSearches = new Set();
+
+        function toggleSearchSelection(cardElement, searchId) {
+            const checkbox = cardElement.querySelector('.card-checkbox');
+            const isSelected = selectedSearches.has(searchId);
+            
+            if (isSelected) {
+                selectedSearches.delete(searchId);
+                cardElement.classList.remove('selected');
+                checkbox.checked = false;
+            } else {
+                selectedSearches.add(searchId);
+                cardElement.classList.add('selected');
+                checkbox.checked = true;
+            }
+            
+            updateQuickAssignBar();
+        }
+
+        function updateQuickAssignBar() {
+            const assignBar = document.getElementById('quickAssignBar');
+            const countElement = document.getElementById('selectedCount');
+            
+            countElement.textContent = selectedSearches.size;
+            
+            if (selectedSearches.size > 0) {
+                assignBar.classList.add('show');
+            } else {
+                assignBar.classList.remove('show');
+            }
+        }
+
+        function clearSelection() {
+            selectedSearches.clear();
+            document.querySelectorAll('.available-work-card').forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('.card-checkbox').checked = false;
+            });
+            updateQuickAssignBar();
+        }
+
+        function assignSelectedToMe() {
+            if (selectedSearches.size === 0) return;
+            
+            const searchList = Array.from(selectedSearches).join(', ');
+            const confirmed = confirm(`Assign ${selectedSearches.size} searches to yourself?\n\nSearches: ${searchList}\n\nThis will start your timer and remove them from the available queue.`);
+            
+            if (confirmed) {
+                console.log('Assigning searches:', Array.from(selectedSearches));
+                
+                // In real implementation, this would make API calls to assign the searches
+                alert(`Successfully assigned ${selectedSearches.size} searches to you!\n\n${searchList}\n\nTimers have started. You can now begin working on these searches.`);
+                
+                // Remove assigned cards from available work section
+                selectedSearches.forEach(searchId => {
+                    const card = document.querySelector(`[data-search-id="${searchId}"]`);
+                    if (card) {
+                        card.style.opacity = '0.5';
+                        card.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--success-green); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">ASSIGNED TO YOU</div>';
+                        setTimeout(() => card.remove(), 2000);
+                    }
+                });
+                
+                // Update stats
+                const currentWorkingStat = document.querySelector('.my-stat-card:first-child .my-stat-value');
+                const currentCount = parseInt(currentWorkingStat.textContent);
+                currentWorkingStat.textContent = currentCount + selectedSearches.size;
+                
+                clearSelection();
+            }
+        }
+
+        function updateProductivityReport() {
+            const timePeriod = document.getElementById('timePeriod').value;
+            const queueFilter = document.getElementById('queueFilter').value;
+            const researcherFilter = document.getElementById('researcherFilter').value;
+            
+            console.log('Updating report with:', {
+                timePeriod,
+                queueFilter,
+                researcherFilter
+            });
+            
+            // In a real implementation, this would make an API call to get updated data
+            // For demo purposes, we'll just show the current data
+            
+            // Update summary based on filters
+            updateReportSummary(timePeriod, queueFilter, researcherFilter);
+        }
+
+        function updateReportSummary(timePeriod, queueFilter, researcherFilter) {
+            // This would typically fetch new data from the API
+            // For demo, we'll simulate different data based on filters
+            
+            const summaryData = {
+                'today': { completed: 12, avgTime: '21m', totalTime: '4h 12m', completionRate: '100%', searchesPerHour: '2.85' },
+                'week': { completed: 47, avgTime: '23m', totalTime: '18h 5m', completionRate: '94%', searchesPerHour: '2.05' },
+                'month': { completed: 186, avgTime: '25m', totalTime: '77h 30m', completionRate: '91%', searchesPerHour: '1.95' },
+                'quarter': { completed: 521, avgTime: '27m', totalTime: '235h 7m', completionRate: '89%', searchesPerHour: '1.85' }
+            };
+            
+            const data = summaryData[timePeriod] || summaryData['week'];
+            
+            document.querySelector('.summary-card:nth-child(1) .summary-value').textContent = data.completed;
+            document.querySelector('.summary-card:nth-child(2) .summary-value').textContent = data.avgTime;
+            document.querySelector('.summary-card:nth-child(3) .summary-value').textContent = data.totalTime;
+            document.querySelector('.summary-card:nth-child(4) .summary-value').textContent = data.completionRate;
+            document.querySelector('.summary-card:nth-child(5) .summary-value').textContent = data.searchesPerHour;
+        }
+
+        function exportReport() {
+            const timePeriod = document.getElementById('timePeriod').value;
+            const queueFilter = document.getElementById('queueFilter').value;
+            const researcherFilter = document.getElementById('researcherFilter').value;
+            
+            // In a real implementation, this would generate and download a PDF or Excel file
+            alert(`Exporting productivity report...\n\nTime Period: ${timePeriod}\nQueue: ${queueFilter}\nResearcher: ${researcherFilter}\n\nReport will be downloaded shortly.`);
+            
+            console.log('Exporting report with filters:', {
+                timePeriod,
+                queueFilter,
+                researcherFilter
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('productivityModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideProductivityReport();
+            }
+        });
+
+        document.getElementById('myProductivityModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideMyProductivity();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('productivityModal').classList.contains('show')) {
+                    hideProductivityReport();
+                }
+                if (document.getElementById('myProductivityModal').classList.contains('show')) {
+                    hideMyProductivity();
+                }
+            }
+        });
+
+        // Simulate real-time updates
+        function updateSessionTimes() {
+            const sessionElements = document.querySelectorAll('.session-time');
+            sessionElements.forEach(element => {
+                if (element.textContent.includes('Working for')) {
+                    const currentText = element.textContent;
+                    const timeMatch = currentText.match(/(\d+)m/);
+                    if (timeMatch) {
+                        const currentMinutes = parseInt(timeMatch[1]);
+                        const newMinutes = currentMinutes + 1;
+                        element.textContent = `Working for ${newMinutes}m`;
+                    }
+                }
+            });
+        }
+
+        // Update session times every minute (simulation)
+        setInterval(updateSessionTimes, 60000);
+
+        // Add filter functionality
+        document.getElementById('researcher-filter').addEventListener('change', function() {
+            // Implementation would filter table rows based on researcher
+            console.log('Filter by researcher:', this.value);
+        });
+
+        document.getElementById('priority-filter').addEventListener('change', function() {
+            // Implementation would filter table rows based on priority
+            console.log('Filter by priority:', this.value);
+        });
+
+        document.getElementById('time-filter').addEventListener('change', function() {
+            // Implementation would filter table rows based on time invested
+            console.log('Filter by time:', this.value);
+        });
+
+        document.getElementById('search-input').addEventListener('input', function() {
+            // Implementation would search for specific search IDs
+            console.log('Search for:', this.value);
+        });
+    </script>
+</body>
+</html>
