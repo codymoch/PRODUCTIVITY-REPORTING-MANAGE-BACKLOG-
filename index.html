@@ -886,6 +886,109 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        /* Release Reason Modal */
+        .release-reason-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .release-reason-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .release-reason-content {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .release-reason-modal.show .release-reason-content {
+            transform: translateY(0);
+        }
+
+        .release-reason-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--neutral-800);
+            margin-bottom: 0.5rem;
+        }
+
+        .release-reason-subtitle {
+            color: var(--neutral-600);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .reason-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--neutral-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            background: white;
+        }
+
+        .reason-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        .reason-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: var(--neutral-200);
+            color: var(--neutral-700);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: var(--neutral-300);
+        }
+
+        .btn-confirm-release {
+            background: var(--warning-yellow);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-confirm-release:hover {
+            background: #d97706;
+        }
     </style>
 </head>
 <body>
@@ -1322,11 +1425,7 @@
                         <button class="export-btn" onclick="exportReport()">📄 Export Report</button>
                     </div>
                 </div>
-                  <div class="summary-card">
-                        <div class="summary-value">3</div>
-                        <div class="summary-label">Active Researchers</div>
-                    </div>
-            
+
                 <div class="report-summary">
                     <div class="summary-card">
                         <div class="summary-value">84</div>
@@ -1337,11 +1436,21 @@
                         <div class="summary-label">Searches Completed</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">56%</div>
+                        <div class="summary-value">47/56%</div>
                         <div class="summary-label">% Complete</div>
                     </div>
-                  
-              
+                    <div class="summary-card">
+                        <div class="summary-value">3</div>
+                        <div class="summary-label">Active Researchers</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">120h</div>
+                        <div class="summary-label">Total Available Hours</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">88h</div>
+                        <div class="summary-label">Hours on Completed Searches</div>
+                    </div>
                     <div class="summary-card">
                         <div class="summary-value">73%</div>
                         <div class="summary-label">Utilization Rate</div>
@@ -1354,7 +1463,10 @@
                         <div class="summary-value">19.5</div>
                         <div class="summary-label">Potential per Researcher</div>
                     </div>
-                  
+                    <div class="summary-card">
+                        <div class="summary-value">32h</div>
+                        <div class="summary-label">Unutilized Hours</div>
+                    </div>
                     <div class="summary-card">
                         <div class="summary-value">2.05</div>
                         <div class="summary-label">Searches/Hour Rate</div>
@@ -1364,7 +1476,8 @@
                 <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9ff; border-left: 4px solid var(--primary-blue); border-radius: var(--border-radius);">
                     <p style="margin: 0; font-size: 0.85rem; color: var(--neutral-600);">
                         <strong>Work Flow Analysis:</strong> 84 searches available in backlog, 47 completed = 56% completion rate.
-                        <strong>Workforce Planning:</strong> You need to consider adding 2.3 resources based on current productivity or improving Utilization Rate
+                        <strong>Utilization:</strong> 88 hours used ÷ 120 hours available = 73% researcher utilization.
+                        <strong>Opportunity:</strong> 32 unutilized hours × 2.05 rate = 15.6 additional searches possible with current staffing.
                     </p>
                 </div>
 
@@ -1726,6 +1839,25 @@
         </div>
     </div>
 
+    <!-- Release Reason Modal -->
+    <div id="releaseReasonModal" class="release-reason-modal">
+        <div class="release-reason-content">
+            <h3 class="release-reason-title">Release Search Back to Queue</h3>
+            <p class="release-reason-subtitle">Please select your reason for releasing this search:</p>
+            
+            <select id="releaseReason" class="reason-select">
+                <option value="">Select a reason...</option>
+                <option value="hungry">Hungry</option>
+                <option value="tired">Tired</option>
+            </select>
+            
+            <div class="reason-buttons">
+                <button class="btn-cancel" onclick="cancelRelease()">Cancel</button>
+                <button class="btn-confirm-release" onclick="confirmRelease()" disabled>Release Search</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function toggleHistory(button, searchId) {
             const historyRow = document.getElementById(searchId + '-history');
@@ -1767,21 +1899,60 @@
         }
 
         function releaseSearch(searchId) {
-            const confirmed = confirm(`Are you sure you want to release ${searchId} back to the queue?\n\nThis will stop your timer and make it available for other researchers.`);
-            if (confirmed) {
-                console.log(`Released ${searchId} back to queue`);
-                // In real implementation, this would make API call to release the search
-                alert(`${searchId} has been released back to the queue.\nYour work session time has been saved: You can resume later or another researcher can pick it up.`);
-                
-                // Remove the work card from the UI
-                const workCard = document.querySelector(`[data-search-id="${searchId}"]`)?.closest('.work-in-progress-card');
-                if (workCard) {
-                    workCard.style.opacity = '0.5';
-                    workCard.innerHTML += '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--warning-yellow); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">RELEASED</div>';
-                    setTimeout(() => workCard.remove(), 2000);
-                }
+            // Store the search ID for later use
+            window.currentReleaseSearchId = searchId;
+            
+            // Show the release reason modal
+            const modal = document.getElementById('releaseReasonModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Reset the form
+            document.getElementById('releaseReason').value = '';
+            document.querySelector('.btn-confirm-release').disabled = true;
+        }
+
+        function cancelRelease() {
+            const modal = document.getElementById('releaseReasonModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+            window.currentReleaseSearchId = null;
+        }
+
+        function confirmRelease() {
+            const reason = document.getElementById('releaseReason').value;
+            const searchId = window.currentReleaseSearchId;
+            
+            if (!reason || !searchId) return;
+            
+            // Hide the modal first
+            cancelRelease();
+            
+            const reasonText = reason === 'hungry' ? 'Hungry' : 'Tired';
+            
+            console.log(`Released ${searchId} back to queue - Reason: ${reasonText}`);
+            
+            // Show confirmation with reason
+            alert(`${searchId} has been released back to the queue.\n\nReason: ${reasonText}\nYour work session time has been saved. You can resume later or another researcher can pick it up.`);
+            
+            // Remove the work card from the UI
+            const workCard = document.querySelector(`[onclick="releaseSearch('${searchId}')"]`)?.closest('.work-in-progress-card');
+            if (workCard) {
+                workCard.style.opacity = '0.5';
+                workCard.innerHTML += `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--warning-yellow); color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">RELEASED - ${reasonText.toUpperCase()}</div>`;
+                setTimeout(() => workCard.remove(), 2000);
             }
         }
+
+        // Enable/disable the confirm button based on reason selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const reasonSelect = document.getElementById('releaseReason');
+            const confirmButton = document.querySelector('.btn-confirm-release');
+            
+            reasonSelect.addEventListener('change', function() {
+                confirmButton.disabled = !this.value;
+            });
+        });
 
         function viewSearch(searchId) {
             console.log(`Viewing details for ${searchId}`);
@@ -1927,6 +2098,12 @@
             }
         });
 
+        document.getElementById('releaseReasonModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cancelRelease();
+            }
+        });
+
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -1935,6 +2112,9 @@
                 }
                 if (document.getElementById('myProductivityModal').classList.contains('show')) {
                     hideMyProductivity();
+                }
+                if (document.getElementById('releaseReasonModal').classList.contains('show')) {
+                    cancelRelease();
                 }
             }
         });
